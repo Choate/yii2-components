@@ -1,0 +1,21 @@
+{
+    "name": "choate/yii2-components",
+    "type": "extend",
+    "description": "Yii2 Components Extended",
+    "require": {
+        "yiisoft/yii2": "^2.0"
+    },
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Choate",
+            "email": "choate.yao@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "choate\\yii2\\components\\": "src"
+        }
+    }
+}
