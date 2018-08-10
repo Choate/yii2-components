@@ -292,6 +292,17 @@ class ActiveRecord extends YiiActiveRecord
         $event = $this->getTriggerEvent($event);
         $event->sender = $this;
         $handler = [$event, 'handler'];
+        // 事件执行完成之后将取消事件，避免执行两次
+        $offEventCallback = function () use ($db, $handler) {
+            try {
+                $db->off(Connection::EVENT_BEFORE_COMMIT_TRANSACTION, $handler);
+                $this->off(self::EVENT_AFTER_DELETE, $handler);
+                $this->off(self::EVENT_AFTER_UPDATE, $handler);
+                $this->off(self::EVENT_AFTER_INSERT, $handler);
+            } catch (ErrorException $e) {
+                Yii::warning($e);
+            }
+        };
         if ($db->getTransaction()) {
             try {
                 $db->off(Connection::EVENT_BEFORE_COMMIT_TRANSACTION, $handler);
@@ -299,6 +310,7 @@ class ActiveRecord extends YiiActiveRecord
                 Yii::warning($e);
             }
             $db->on(Connection::EVENT_BEFORE_COMMIT_TRANSACTION, $handler);
+            $db->on(Connection::EVENT_BEFORE_COMMIT_TRANSACTION, $offEventCallback);
         } else {
             if ($this->getIsNewRecord()) {
                 try {
@@ -307,6 +319,7 @@ class ActiveRecord extends YiiActiveRecord
                     Yii::warning($e);
                 }
                 $this->on(self::EVENT_AFTER_INSERT, $handler);
+                $this->on(self::EVENT_AFTER_INSERT, $offEventCallback);
             } else {
                 try {
                     $this->off(self::EVENT_AFTER_DELETE, $handler);
@@ -316,6 +329,8 @@ class ActiveRecord extends YiiActiveRecord
                 }
                 $this->on(self::EVENT_AFTER_DELETE, $handler);
                 $this->on(self::EVENT_AFTER_UPDATE, $handler);
+                $this->on(self::EVENT_AFTER_DELETE, $offEventCallback);
+                $this->on(self::EVENT_AFTER_UPDATE, $offEventCallback);
             }
         }
     }
